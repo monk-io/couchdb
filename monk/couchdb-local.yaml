@@ -1,0 +1,48 @@
+namespace: couchdb
+
+local:
+  defines: runnable
+  inherits: couchdb/base
+  metadata:
+    name: Apache CouchDB Local
+    description: Local verification flavor for Apache CouchDB with persistent storage and a non-privileged published localhost port.
+    tags: database, nosql, couchdb, local
+  variables:
+    admin-password:
+      type: string
+      value: <- random-uuid
+      env: COUCHDB_PASSWORD
+      description: Sensitive. Local-only generated administrator password used for deployment verification; inheriting production templates must use secret("couchdb-admin-password").
+    couchdb-cookie:
+      type: string
+      value: <- random-uuid
+      env: COUCHDB_SECRET
+      description: Sensitive. Local-only generated CouchDB shared secret/cookie; inheriting production templates should use secret("couchdb-cookie").
+    host-port:
+      type: int
+      value: 15984
+      description: Non-privileged host port published by the local flavor for external HTTP verification.
+  files:
+    local-config:
+      container: couchdb
+      path: /opt/couchdb/etc/local.d/monk.ini
+      mode: 420
+      contents: |
+        [couchdb]
+        single_node = true
+        max_document_size = 8000000
+
+        [chttpd]
+        bind_address = 0.0.0.0
+        require_valid_user = false
+
+        [httpd]
+        bind_address = 0.0.0.0
+  services:
+    http:
+      description: CouchDB HTTP/JSON API published on a local host port for verification.
+      container: couchdb
+      port: 5984
+      protocol: tcp
+      publish: true
+      host-port: <- $host-port

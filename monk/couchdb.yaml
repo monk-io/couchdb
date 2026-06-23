@@ -1,0 +1,63 @@
+namespace: couchdb
+
+base:
+  defines: runnable
+  metadata:
+    name: Apache CouchDB
+    description: Base single-node Apache CouchDB runnable using the public Docker Hub image, persistent data storage, and no published network port by default.
+    tags: database, nosql, couchdb, http
+    website: https://couchdb.apache.org/
+    source: https://github.com/apache/couchdb
+    publisher: apache
+  variables:
+    couchdb-image-tag:
+      type: string
+      value: "3"
+      description: Public Docker Hub image tag for docker.io/library/couchdb.
+    admin-user:
+      type: string
+      value: admin
+      env: COUCHDB_USER
+      description: CouchDB administrator username.
+    admin-password:
+      type: string
+      value: ""
+      env: COUCHDB_PASSWORD
+      description: Sensitive. CouchDB administrator password; inheriting templates must set this to a strong value, preferably with secret("couchdb-admin-password").
+    couchdb-cookie:
+      type: string
+      value: ""
+      env: COUCHDB_SECRET
+      description: Sensitive. CouchDB shared secret/cookie for node security; inheriting templates should set this to a strong value, preferably with secret("couchdb-cookie").
+  containers:
+    couchdb:
+      image: docker.io/library/couchdb
+      image-tag: <- $couchdb-image-tag
+      restart: unless-stopped
+      paths:
+        - <- `${monk-volume-path}/couchdb-data:/opt/couchdb/data`
+      logs:
+        quota: 50M
+        count: 5
+  files:
+    local-config:
+      container: couchdb
+      path: /opt/couchdb/etc/local.d/monk.ini
+      mode: 420
+      contents: |
+        [couchdb]
+        single_node = true
+        max_document_size = 8000000
+
+        [chttpd]
+        bind_address = 0.0.0.0
+        require_valid_user = true
+
+        [httpd]
+        bind_address = 0.0.0.0
+  services:
+    http:
+      description: CouchDB HTTP/JSON API exposed inside Monk for connected workloads.
+      container: couchdb
+      port: 5984
+      protocol: tcp

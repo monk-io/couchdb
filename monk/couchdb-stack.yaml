@@ -1,0 +1,33 @@
+namespace: couchdb
+
+stack:
+  defines: runnable
+  inherits: couchdb/base
+  metadata:
+    name: Apache CouchDB Stack
+    description: Production-oriented single-node CouchDB stack with generated non-default administrator credentials, persistent storage, and authenticated ingress routing.
+    tags: database, nosql, couchdb, production
+  variables:
+    admin-password:
+      type: string
+      value: <- random-uuid
+      env: COUCHDB_PASSWORD
+      description: Sensitive. Generated CouchDB administrator password with no default value; inheriting deployments should override this with secret("couchdb-admin-password").
+    couchdb-cookie:
+      type: string
+      value: <- random-uuid
+      env: COUCHDB_SECRET
+      description: Sensitive. Generated CouchDB shared secret/cookie with no default value; inheriting deployments should override this with secret("couchdb-cookie").
+    ingress-host:
+      type: string
+      value: couchdb.example.com
+      description: Production ingress hostname for the CouchDB HTTP API.
+  services:
+    http:
+      description: Authenticated CouchDB HTTP/JSON API routed through production ingress.
+      container: couchdb
+      port: 5984
+      protocol: tcp
+      ingress-routes:
+        couchdb:
+          host: <- $ingress-host
