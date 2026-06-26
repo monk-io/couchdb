@@ -1,0 +1,4 @@
+LOAD monk/couchdb.yaml
+LOAD monk/couchdb-stack.yaml
+LOAD monk/couchdb-local.yaml
+ENTRY couchdb/local
